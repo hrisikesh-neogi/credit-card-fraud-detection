@@ -63,7 +63,7 @@ class ModelTrainer:
 
         self.models = {
             "GaussianNB": GaussianNB(),
-            "XGBClassifier": XGBClassifier(objective='binary:logistic', n_jobs=-1)
+            "XGBClassifier": XGBClassifier(objective='binary:logistic')
         }
 
     def evaluate_models(self, X, y, models):

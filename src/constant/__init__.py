@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 
-AWS_S3_BUCKET_NAME = "credit-card"
+AWS_S3_BUCKET_NAME = "credit-card-bucket"
 MONGO_DATABASE_NAME = "credit-card"
 
 TARGET_COLUMN = "default payment next month"

@@ -53,9 +53,6 @@ class DataTransformation:
                 csv_data.append(data)
 
             merged_data = pd.concat(csv_data)
-            merged_data.drop(columns="Wafer", inplace=True)
-
-            merged_data.rename(columns={"Good/Bad": TARGET_COLUMN}, inplace=True)
 
             return merged_data
         except Exception as e:

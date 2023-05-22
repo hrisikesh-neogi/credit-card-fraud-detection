@@ -2,25 +2,20 @@ model_selection:
     model:
       XGBClassifier:
         search_param_grid:
-          learning_rate: 
-           - 0.1
-           - 0.01
-           - 0.001
-           
           max_depth: 
            - 3
            - 5
            - 7
-          
-          n_estimators: 
+           - 9
+           - 11
+          n_estimators:
+           - 50
            - 100
-           - 200
-           - 300
-          
-          gamma: 
-           - 0
-           - 0.1
-           - 0.2
+           - 130
+          random_state:
+            - 0
+            - 50
+            - 100
 
           
     GaussianNB:
