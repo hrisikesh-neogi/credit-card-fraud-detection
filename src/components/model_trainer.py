@@ -20,38 +20,12 @@ from dataclasses import dataclass
 
 @dataclass
 class ModelTrainerConfig:
-    model_trainer_dir = os.path.join(artifact_folder, 'model_trainer')
-    trained_model_path = os.path.join(model_trainer_dir, 'trained_model', "model.pkl")
+    trained_model_path = os.path.join(artifact_folder, "model.pkl")
     expected_accuracy = 0.45
     model_config_file_path = os.path.join('config', 'model.yaml')
 
 
-class VisibilityModel:
-    def __init__(self, preprocessing_object: object, trained_model_object: object):
-        self.preprocessing_object = preprocessing_object
 
-        self.trained_model_object = trained_model_object
-
-    def predict(self, X: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Entered predict method of srcTruckModel class")
-
-        try:
-            logging.info("Using the trained model to get predictions")
-
-            transformed_feature = self.preprocessing_object.transform(X)
-
-            logging.info("Used the trained model to get predictions")
-
-            return self.trained_model_object.predict(transformed_feature)
-
-        except Exception as e:
-            raise CustomException(e, sys) from e
-
-    def __repr__(self):
-        return f"{type(self.trained_model_object).__name__}()"
-
-    def __str__(self):
-        return f"{type(self.trained_model_object).__name__}()"
 
 
 class ModelTrainer:
@@ -136,9 +110,7 @@ class ModelTrainer:
 
         try:
 
-            model_param_grid = \
-            self.utils.read_yaml_file(self.model_trainer_config.model_config_file_path)["model_selection"]["model"][
-                best_model_name]["search_param_grid"]
+            model_param_grid = self.utils.read_yaml_file(self.model_trainer_config.model_config_file_path)["model_selection"]["model"][best_model_name]["search_param_grid"]
 
             grid_search = GridSearchCV(
                 best_model_object, param_grid=model_param_grid, cv=5, n_jobs=-1, verbose=1)
@@ -169,7 +141,6 @@ class ModelTrainer:
 
             logging.info(f"Extracting model config file path")
 
-            preprocessor = self.utils.load_object(file_path=preprocessor_path)
 
             logging.info(f"Extracting model config file path")
 
@@ -204,11 +175,7 @@ class ModelTrainer:
 
             logging.info(f"Best found model on both training and testing dataset")
 
-            custom_model = VisibilityModel(
-                preprocessing_object=preprocessor,
-                trained_model_object=best_model
-            )
-
+          
             logging.info(
                 f"Saving model at path: {self.model_trainer_config.trained_model_path}"
             )
@@ -217,12 +184,10 @@ class ModelTrainer:
 
             self.utils.save_object(
                 file_path=self.model_trainer_config.trained_model_path,
-                obj=custom_model,
+                obj=best_model,
             )
 
-            self.utils.upload_file(from_filename=self.model_trainer_config.trained_model_path,
-                                   to_filename="model.pkl",
-                                   bucket_name=AWS_S3_BUCKET_NAME)
+
 
             return best_model_score
 

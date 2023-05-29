@@ -8,14 +8,14 @@ from src.constant import *
 from src.exception import CustomException
 from src.logger import logging
 
-from src.data_access.card_data import CardData
 from src.utils.main_utils import MainUtils
 from dataclasses import dataclass
 
 
 @dataclass
 class DataIngestionConfig:
-    data_ingestion_dir: str = os.path.join(artifact_folder, "data_ingestion")
+    data_ingestion_dir: str = os.path.join(artifact_folder)
+    raw_data_path: str = os.path.join(data_ingestion_dir,"card_data.csv")
 
 
 class DataIngestion:
@@ -24,9 +24,9 @@ class DataIngestion:
         self.data_ingestion_config = DataIngestionConfig()
         self.utils = MainUtils()
 
-    def export_collection_as_dataframe(collection_name, db_name):
+    def export_collection_as_dataframe(self,collection_name, db_name):
         try:
-            mongo_client = MongoClient(os.getenv("MONGO_DB_URL"))
+            mongo_client = MongoClient(MONGO_DB_URL)
 
             collection = mongo_client[db_name][collection_name]
 
@@ -55,18 +55,18 @@ class DataIngestion:
         """
         try:
             logging.info(f"Exporting data from mongodb")
-            raw_batch_files_path = self.data_ingestion_config.data_ingestion_dir
-            os.makedirs(raw_batch_files_path, exist_ok=True)
+            raw_data_dir = self.data_ingestion_config.data_ingestion_dir
+            os.makedirs(raw_data_dir, exist_ok=True)
 
-            card_data = CardData(
-                database_name=MONGO_DATABASE_NAME)
+            raw_data_path = self.data_ingestion_config.raw_data_path
 
-            logging.info(f"Saving exported data into feature store file path: {raw_batch_files_path}")
-            for collection_name, dataset in card_data.export_collections_as_dataframe():
-                logging.info(f"Shape of {collection_name}: {dataset.shape}")
-                feature_store_file_path = os.path.join(raw_batch_files_path, collection_name + '.csv')
-                dataset.rename(columns={"Unnamed: 0": "Wafer"}, inplace=True)
-                dataset.to_csv(feature_store_file_path, index=False)
+            
+
+            logging.info(f"Saving exported data into feature store file path: {raw_data_path}")
+            dataset  = self.export_collection_as_dataframe(db_name=MONGO_DATABASE_NAME,
+                                                           collection_name= MONGO_COLLECTION_NAME)
+           
+            dataset.to_csv(raw_data_path, index=False)
 
 
 
@@ -96,7 +96,7 @@ class DataIngestion:
                 "Exited initiate_data_ingestion method of Data_Ingestion class"
             )
 
-            return self.data_ingestion_config.data_ingestion_dir
+            return self.data_ingestion_config.raw_data_path
 
         except Exception as e:
             raise CustomException(e, sys) from e

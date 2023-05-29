@@ -13,9 +13,11 @@ from dataclasses import dataclass
         
         
 @dataclass
-class PredictionFileDetail:
+class PredictionPipelineConfig:
     prediction_output_dirname: str = "predictions"
     prediction_file_name:str =  "predicted_file.csv"
+    trained_model_file_path: str = os.path.join(artifact_folder,"model.pkl")
+    preprocessor_path: str = os.path.join(artifact_folder,"preprocessor.pkl")
     prediction_file_path:str = os.path.join(prediction_output_dirname,prediction_file_name)
 
 
@@ -25,7 +27,7 @@ class PredictionPipeline:
 
         self.request = request
         self.utils = MainUtils()
-        self.prediction_file_detail = PredictionFileDetail()
+        self.prediction_pipeline_config = PredictionPipelineConfig()
 
 
 
@@ -59,15 +61,17 @@ class PredictionPipeline:
 
     def predict(self, features):
             try:
-                model_path = self.utils.download_model(
-                    bucket_name=AWS_S3_BUCKET_NAME,
-                    bucket_file_name="model.pkl",
-                    dest_file_name="model.pkl",
-                )
+                model_path = self.prediction_pipeline_config.trained_model_file_path
+                preprocessor_path = self.prediction_pipeline_config.preprocessor_path
+
 
                 model = self.utils.load_object(file_path=model_path)
+                preprocessor = self.utils.load_object(file_path= preprocessor_path)
 
-                preds = model.predict(features)
+                transformed_features = preprocessor.transform(features)
+
+
+                preds = model.predict(transformed_features)
 
                 return preds
 
@@ -97,12 +101,11 @@ class PredictionPipeline:
 
             predictions = self.predict(input_dataframe)
             input_dataframe[prediction_column_name] = [pred for pred in predictions]
-            target_column_mapping = {0:'bad', 1:'good'}
 
-            input_dataframe[prediction_column_name] = input_dataframe[prediction_column_name].map(target_column_mapping)
+
             
-            os.makedirs( self.prediction_file_detail.prediction_output_dirname, exist_ok= True)
-            input_dataframe.to_csv(self.prediction_file_detail.prediction_file_path, index= False)
+            os.makedirs( self.prediction_pipeline_config.prediction_output_dirname, exist_ok= True)
+            input_dataframe.to_csv(self.prediction_pipeline_config.prediction_file_path, index= False)
             logging.info("predictions completed. ")
 
 
@@ -117,7 +120,7 @@ class PredictionPipeline:
             input_csv_path = self.save_input_files()
             self.get_predicted_dataframe(input_csv_path)
 
-            return self.prediction_file_detail
+            return self.prediction_pipeline_config
 
 
         except Exception as e:
